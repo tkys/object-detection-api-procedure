@@ -55,52 +55,45 @@ unzip protobuf.zip
 ## 学習用の画像収集
 
 サイズは特に指定無し 
-./images ディレクトリ以下へ配置しておく
+`./images` ディレクトリ以下へ配置しておく
 
 （参考）
-
-'./images/100.png'
-
-'./images/200.png'
-
+```
+./images/100.png
+./images/200.png
+```
 
 ----
 ## 学習用に画像へ矩形アノテーションを行い、XY座標の入ったデータを準備
 
-.csv形式でファイル用意
+`.csv`形式でファイル用意
 
 カラム名は 'class','img_path', 'xmin', 'ymin', 'xmax', 'ymax'
 
 （参考）
-
+```
 class,filename,xmin,ymin,xmax,ymax
-
 room,100.png,2376,649,2405,667
-
 room,100.png,2066,584,2125,609
-
 room,100.png,1742,523,1837,598
-
 room,200.png,1550,533,1621,560
-
 room,200.png,1236,616,1293,643
-
+```
 
 
 ### 学習用、テスト評価用に2種作成しておく
 
-./labels ディレクトリ以下へ配置しておく
+`./labels` ディレクトリ以下へ配置しておく
 
 （参考）
-
-'./labels/train_labels.csv'
-
-'./labels/test_labels.csv'
-
+```
+./labels/train_labels.csv  #学習用アノテーションデータ
+./labels/test_labels.csv  #テスト用アノテーションデータ
+```
 
 
 ----
-#### ラベルデータの作成
+#### class名データの作成
 Make a new file `object-detection.pbtxt` which looks like this:
 ```
 item {
@@ -115,18 +108,20 @@ item {
 `generate_tfrecord.py`
 
 ### From tensorflow/models/reserch/
-$ cd ./tensorflow/models/reserch/
+```
+cd ./tensorflow/models/reserch/
+```
 
 
 ### Create train data:
 
 ```
-python generate_tfrecord.py --csv_input=./path/to/train_labels.csv  --output_path=/path/to/train.record --image_dir ../images
+python generate_tfrecord.py --csv_input=./labels/train_labels.csv  --output_path=./path/to/train.record --image_dir ../images
 ```
 
 ### Create test data:
 ```
-python generate_tfrecord.py --csv_input=data/test_labels.csv  --output_path=test.record --image_dir ../images
+python generate_tfrecord.py --csv_input=./labels/test_labels.csv  --output_path=./path/to/test.record --image_dir ../images
 ```
 
 
@@ -252,9 +247,6 @@ python export_inference_graph.py --input_type image_tensor --pipeline_config_pat
 # --output_directory # 推論用データの出力先ディレクトリ　
 ```
 
-```
-python export_inference_graph.py --input_type image_tensor --pipeline_config_path ../../../ssd_resnet50_fpn_coco_1221_batch4_step100000/pipeline.config --trained_checkpoint_prefix ../../../tmpf6bj2q6n/model.ckpt-63267 --output_directory  ./output_inference/
-```
 
 
 以下ファイルが生成される
@@ -274,7 +266,13 @@ saved_model
 注意）.pbファイルを生成した際と後の検出実行する際のtensorflowバージョンは合わせる必要ないとエラーになる。（今回は==1.13.1）
 
 
-ここからこのモデルを使って他の画像を検出する
-from_root_room_detect_own_image.py
+
+### 学習した.pbファイルで検出テスト
+
+ここからこのモデルを使って他の画像を検出する 座標と画像が出力される
+
+```
+python3 from_root_room_detect_own_image.py  ./test.png
+```
 
 
