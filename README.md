@@ -1,45 +1,42 @@
 # object-detection-api-procedure
 
-## object-detection-api　をfine-tunning
+### object-detection-api　をfine-tunning
 
 ・独自用意した画像にて学習
 
 ・学習したモデルで推論
 
 
-今回はfaster rcnn で
-
 -----
-## Object Detection APIのリポジトリをクローン
+### Object Detection APIのリポジトリをクローン
 
 ```
 git clone https://github.com/tensorflow/models
-
 ```
 
 -----
-## Pathを通しておく
+### Pathを通しておく
 
-### From tensorflow/models/research/
+#### From tensorflow/models/research/
 
 ```
 cd model/research
 export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim  # 
 echo $PYTHONPATH
 
->>>:/home/spi/tk_yoshikawa/photolac/models/research:/home/spi/tk_yoshikawa/photolac/models/research/slim
+>>>:/home/user1/workspace/models/research:/home/user1/workspace/models/research/slim
 ```
 
 -----
 
-## Protobufのコンパイル
+### Protobufのコンパイル
 Tensorflow Object Detection APIは、Protobufsを使用してモデルとトレーニングパラメーターを構成します。
 
 フレームワークを使用するには、Protobufライブラリをコンパイルする必要があります。これは、tensorflow/models/research/ディレクトリから次のコマンドを実行して実行する必要があります。
 
-### Download and install the 3.0 release of protoc, then unzip the file.
+#### Download and install the 3.0 release of protoc, then unzip the file.
 
-### From tensorflow/models/research/
+#### From tensorflow/models/research/
 
 ```
 wget -O protobuf.zip https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip
@@ -61,7 +58,9 @@ unzip protobuf.zip
 ./images ディレクトリ以下へ配置しておく
 
 （参考）
+
 './images/100.png'
+
 './images/200.png'
 
 
@@ -69,57 +68,81 @@ unzip protobuf.zip
 ## 学習用に画像へ矩形アノテーションを行い、XY座標の入ったデータを準備
 
 .csv形式でファイル用意
+
 カラム名は 'class','img_path', 'xmin', 'ymin', 'xmax', 'ymax'
 
 （参考）
+
 class,filename,xmin,ymin,xmax,ymax
+
 room,100.png,2376,649,2405,667
+
 room,100.png,2066,584,2125,609
+
 room,100.png,1742,523,1837,598
+
 room,200.png,1550,533,1621,560
+
 room,200.png,1236,616,1293,643
 
 
-##学習用、テスト評価用に2種作成しておく
+
+### 学習用、テスト評価用に2種作成しておく
+
 ./labels ディレクトリ以下へ配置しておく
+
 （参考）
+
 './labels/train_labels.csv'
+
 './labels/test_labels.csv'
 
 
-##################################
-##Make a new file object-detection.pbtxt which looks like this:
+
+----
+#### ラベルデータの作成
+Make a new file `object-detection.pbtxt` which looks like this:
+```
 item {
   id: 1
   name: 'room'
 }
-
+```
 
 -----
-## label.csvからtfrecord形式へ変換する
-generate_tfrecord.py 
+### label.csvからtfrecord形式へ変換する
 
-# From tensorflow/models/reserch/
+`generate_tfrecord.py`
+
+### From tensorflow/models/reserch/
 $ cd ./tensorflow/models/reserch/
 
-# Create train data:
-$ python generate_tfrecord.py --csv_input=./path/to/train_labels.csv  --output_path=/path/to/train.record --image_dir ../images
 
+### Create train data:
 
-# Create test data:
-$  python generate_tfrecord.py --csv_input=data/test_labels.csv  --output_path=test.record --image_dir ../images
+```
+python generate_tfrecord.py --csv_input=./path/to/train_labels.csv  --output_path=/path/to/train.record --image_dir ../images
+```
+
+### Create test data:
+```
+python generate_tfrecord.py --csv_input=data/test_labels.csv  --output_path=test.record --image_dir ../images
+```
 
 
 -----
-## fine-tuneする学習済みモデルを決め、configを書き直す
+### fine-tuneする学習済みモデルを決め、configを書き直す
 
 今回はfaster rcnn でいく
 
-$ cd ./models/research/object_detection/faster_rcnn_nas_coco/
-$ cp ./pipeline.config ./pipeline.config_backup
+```
+cd ./models/research/object_detection/faster_rcnn_nas_coco/
+cp ./pipeline.config ./pipeline.config_backup
+```
 
-編集する
+`pipeline.config`を編集する
 
+```
 #before
 num_classes: 90
 #after
@@ -197,14 +220,26 @@ eval_input_reader {
     input_path: "data/test.record"
   }
 }
-
-###学習進捗を確認
-
-```
-tensorboard --logdir=/tmp/tmp*******
 ```
 
-## 学習したcheckpointから推論用モデル（.pb形式）データを生成する
+### 学習
+
+```
+python object_detection/model_main.py \
+--logtostderr \
+--model_dir=model \
+--pipeline_config_path=pipeline.config
+```
+
+### 学習進捗を確認
+
+```
+tensorboard --logdir model
+
+http://0.0.0.0:6006/
+```
+
+### 学習したcheckpointから推論用モデル（.pb形式）データを生成する
 
 ```
 cd ./models/research/object_detection/
